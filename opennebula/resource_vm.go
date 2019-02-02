@@ -106,8 +106,7 @@ func resourceVm() *schema.Resource {
 			},
 			"image": {
 				Type:        schema.TypeString,
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 				Description: "Image Name",
 			},
 			"image_uname": {

@@ -10,7 +10,7 @@ resource "opennebula_vm" "vm-base" {
   cpu                   = "1"                                      # optional | cpu count 
   vcpu                  = "1"                                      # optional | vcpu count
   memory                = "1024"                                   # optional | memory count in mb
-  image                 = "Debian 9.3"                             # optional | example image name stored in opennebula
+  image                 = "Debian 9.3"                             # required | example image name stored in opennebula
   size                  = "20480"                                  # optional | image size in mb
   image_driver          = "qcow2"                                  # optional | image driver of the image to use
   image_uname           = "oneadmin"                               # optional | owner of the image to use
