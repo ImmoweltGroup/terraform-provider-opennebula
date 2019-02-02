@@ -85,41 +85,48 @@ func resourceVm() *schema.Resource {
 			},
 			"cpu": {
 				Type:        schema.TypeInt,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				ForceNew:    true,
 				Description: "CPU count of the VM instance",
 			},
 			"vcpu": {
 				Type:        schema.TypeInt,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
+				Computed:    true,
 				Description: "VCPU count of the VM instance",
 			},
 			"memory": {
 				Type:        schema.TypeInt,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
+				Computed:    true,
 				Description: "Memory in MB",
 			},
 			"image": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "Image Name",
 			},
 			"image_uname": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "Image Owner",
 			},
 			"image_driver": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "Image Driver",
 			},
 			"size": {
 				Type:        schema.TypeInt,
-				Required:    true,
-				Description: "VM Size in MB",
+				Optional:    true,
+				Computed:    true,
+				Description: "VM Disk Size in MB",
 			},
 			"network": {
 				Type:        schema.TypeString,
@@ -156,22 +163,26 @@ func resourceVm() *schema.Resource {
 			},
 			"network_uname": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "Network Owner",
 			},
 			"network_search_domain": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "Network Search Domain",
 			},
 			"security_group_id": {
 				Type:        schema.TypeInt,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "Security Group ID",
 			},
 			"permissions": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "Permissions for the template (in Unix format, owner-group-other, use-manage-admin)",
 				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
 					value := v.(string)
@@ -229,7 +240,56 @@ func resourceVm() *schema.Resource {
 }
 
 func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
+	template := ""
+	nicArray := []string{}
+	diskArray := []string{}
 	client := meta.(*Client)
+
+	// build NIC template
+	nicArray = append(nicArray, fmt.Sprintf("NETWORK=\"%s\"", d.Get("network")))
+	if value, ok := d.GetOk("network_uname"); ok {
+		nicArray = append(nicArray, fmt.Sprintf("NETWORK_UNAME=\"%s\"", value))
+	}
+	if value, ok := d.GetOk("search_domain"); ok {
+		nicArray = append(nicArray, fmt.Sprintf("SEARCH_DOMAIN=\"%s\"", value))
+	}
+	if value, ok := d.GetOk("security_group"); ok {
+		nicArray = append(nicArray, fmt.Sprintf("SECURITY_GROUP=\"%d\"", value))
+	}
+	if value, ok := d.GetOk("ip"); ok {
+		nicArray = append(nicArray, fmt.Sprintf("IP=\"%s\"", value))
+	}
+
+	template += "NIC = [\n " + fmt.Sprintf(strings.Join(nicArray, ",\n ")) + " ]\n"
+
+	// build the disk part of the template
+	diskArray = append(diskArray, fmt.Sprintf("SIZE=\"%d\"", d.Get("size")))
+	if value, ok := d.GetOk("image"); ok {
+		diskArray = append(diskArray, fmt.Sprintf("IMAGE=\"%s\"", value))
+	}
+	if value, ok := d.GetOk("image_uname"); ok {
+		diskArray = append(diskArray, fmt.Sprintf("IMAGE_UNAME=\"%s\"", value))
+	}
+	if value, ok := d.GetOk("image_driver"); ok {
+		diskArray = append(diskArray, fmt.Sprintf("IMAGE_DRIVER=\"%s\"", value))
+	}
+
+	template += "DISK = [\n " + fmt.Sprintf(strings.Join(diskArray, ",\n ")) + " ]\n"
+
+	// add cpus if requested
+	if value, ok := d.GetOk("cpu"); ok {
+		template += fmt.Sprintf("CPU = \"%d\"\n", value)
+	}
+
+	// add vcpu if requested
+	if value, ok := d.GetOk("vcpu"); ok {
+		template += fmt.Sprintf("VCPU = \"%d\"\n", value)
+	}
+
+	// add memory if requested
+	if value, ok := d.GetOk("memory"); ok {
+		template += fmt.Sprintf("MEMORY = \"%d\"\n", value)
+	}
 
 	resp, err := client.Call(
 		"one.template.instantiate",
@@ -237,33 +297,7 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 		d.Get("name"),
 		false,
 		//todo: maybe use backticks
-		fmt.Sprintf(
-			"CPU = \"%d\"\n"+
-				"VCPU = \"%d\"\n"+
-				"MEMORY = \"%d\"\n "+
-				"DISK=[\n"+
-				"  IMAGE=\"%s\",\n"+
-				"  SIZE=\"%d\",\n"+
-				"  IMAGE_UNAME=\"%s\",\n"+
-				"  DRIVER=\"%s\"]\n"+
-				"NIC=[\n"+
-				"  NETWORK=\"%s\",\n"+
-				"  NETWORK_UNAME=\"%s\",\n"+
-				"  SEARCH_DOMAIN=\"%s\",\n"+
-				"  SECURITY_GROUP=\"%d\",\n"+
-				"  IP=\"%s\"]",
-			d.Get("cpu"),
-			d.Get("vcpu"),
-			d.Get("memory"),
-			d.Get("image"),
-			d.Get("size"),
-			d.Get("image_uname"),
-			d.Get("image_driver"),
-			d.Get("network"),
-			d.Get("network_uname"),
-			d.Get("network_search_domain"),
-			d.Get("security_group_id"),
-			d.Get("ip")),
+		template,
 		false,
 	)
 	if err != nil {
@@ -276,6 +310,10 @@ func resourceVmCreate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return fmt.Errorf(
 			"Error waiting for virtual machine (%s) to be in state RUNNING: %s", d.Id(), err)
+	}
+
+	if _, ok := d.GetOk("permissions"); !ok {
+		d.Set("permissions", "640")
 	}
 
 	if _, err = changePermissions(intId(d.Id()), permission(d.Get("permissions").(string)), client, "one.vm.chmod"); err != nil {
