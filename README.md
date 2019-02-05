@@ -65,7 +65,7 @@ Current flow:
   
 ## Collaborators
 
-- [Cemal Acar](https://github.com/cacar)
+- [Cemal Acar](https://github.com/cacar87)
 - [Runtastic](https://github.com/runtastic)
 - [Lorenzo Arribas](https://github.com/larribas)
 - [Jason Tevnan](https://github.com/tnosaj)
