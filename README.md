@@ -1,6 +1,4 @@
 # terraform-provider-opennebula
-[![Powered by Immowelt](https://img.shields.io/badge/powered%20by-immowelt-yellow.svg?colorB=ffb200)](https://stackshare.io/immowelt-group/)  
-    
 
 ## Table of Contents
   * [About](#about)
@@ -62,12 +60,12 @@ Current flow:
 ## Maintainer
 
 - [Immowelt Group](https://github.com/immoweltgroup)
-  - [Cemal Acar](https://github.com/cacar)
   - [Dennis Kribl](https://github.com/dkribl)
   - [Leroy Förster](https://github.com/gersilex)
   
 ## Collaborators
 
+- [Cemal Acar](https://github.com/cacar)
 - [Runtastic](https://github.com/runtastic)
 - [Lorenzo Arribas](https://github.com/larribas)
 - [Jason Tevnan](https://github.com/tnosaj)
@@ -75,8 +73,7 @@ Current flow:
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at
-https://github.com/immoweltgroup/terraform-provider-opennebula. This project is
+Bug reports and pull requests are welcome. This project is
 intended to be a safe, welcoming space for collaboration, and contributors are
 expected to adhere to the
 [Contributor Covenant](http://contributor-covenant.org) code of conduct.
